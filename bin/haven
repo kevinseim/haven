@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# Use JAVA_HOME if set, otherwise look for java in PATH
+if [ -n "$JAVA_HOME" ]; then
+    for java in "$JAVA_HOME"/bin/amd64/java "$JAVA_HOME"/bin/java; do
+        if [ -x "$java" ]; then
+            JAVA="$java"
+            break
+        fi
+    done
+else
+    JAVA=java
+fi
+
+if [ -z "$JAVA" ] ; then
+    echo Unable to find java. Check JAVA_HOME and PATH environment variables. > /dev/stderr
+    exit 1;
+fi
+
+if [ -z "$HAVEN_HOME" ]; then
+  HAVEN_HOME="$(dirname $0)/.."
+fi
+
+if [ -z "$HAVEN_CONF" ]; then
+  HAVEN_CONF="$HAVEN_HOME/conf"
+fi
+
+CLASSPATH="$HAVEN_CONF"
+for jar in $(ls -1 "$HAVEN_HOME"/lib/*.jar); do
+  CLASSPATH=$CLASSPATH:$jar
+done
+
+HAVEN_OPTS="-Dhaven.home=$HAVEN_HOME"
+HAVEN_OPTS="$HAVEN_OPTS -Dlogback.configurationFile=logback.xml"
+HAVEN_OPTS="$HAVEN_OPTS -Dhaven.logdir=$HAVEN_HOME/logs"
+
+exec $JAVA -cp "$CLASSPATH" $HAVEN_OPTS org.seim.haven.HavenServer
+
