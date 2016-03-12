@@ -1,2 +1,2 @@
-# haven
-A Redis like server for counting things
+# Haven
+The beginnings of a Redis like server for other data structures (e.g. Count Min Sketch).  If this sounds interesting, check back later...
