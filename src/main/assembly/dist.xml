@@ -20,16 +20,15 @@
 		
         <fileSet>
           <directory>target</directory>
-          <outputDirectory>commitlog</outputDirectory>
+          <outputDirectory>data/commitlog</outputDirectory>
           <excludes>
             <exclude>*/**</exclude>
           </excludes>
-          <fileMode>644</fileMode>
         </fileSet>
 
         <fileSet>
           <directory>target</directory>
-          <outputDirectory>snapshot</outputDirectory>
+          <outputDirectory>data/snapshot</outputDirectory>
           <excludes>
             <exclude>*/**</exclude>
           </excludes>
