@@ -1,12 +1,10 @@
 package org.seim.haven.models;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.seim.haven.store.Storable;
 import org.seim.haven.util.Charsets;
-import org.xerial.snappy.Snappy;
 
 /**
  * @author Kevin Seim
@@ -54,22 +52,8 @@ public final class Token implements Storable {
   @Override
   public void serialize(ByteBuffer buf) {
     byte[] data = this.value;
+    
     int length = data.length;
-    
-    if (length > 1024) {
-      try {
-        byte[] cdata = Snappy.compress(data);
-        if (cdata.length < 0.9 * length) {
-          data = cdata;
-          length = cdata.length;
-          buf.put((byte) (0x1100_0100));
-        }
-      }
-      catch (IOException e) { 
-        // ignore and simply do not compress
-      }
-    }
-    
     if (length < 63) {
       buf.put((byte) value.length);
     } else if (length < 16383) {
@@ -79,6 +63,7 @@ public final class Token implements Storable {
       buf.put((byte) (0x1000_0000));
       buf.putInt(length);
     }
+    
     buf.put(value);
   }
   

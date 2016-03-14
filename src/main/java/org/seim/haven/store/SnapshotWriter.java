@@ -10,7 +10,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import org.seim.haven.Settings;
 import org.seim.haven.models.Model;
 import org.seim.haven.models.ModelType;
 import org.seim.haven.models.Token;
@@ -19,24 +18,27 @@ import org.seim.haven.util.FutureImpl;
 import org.seim.haven.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xerial.snappy.Snappy;
 
 /**
  * @author Kevin Seim
  */
 final class SnapshotWriter implements Callable<Integer> {
 
-  public static final byte[] HEADER = "HAVEN".getBytes(Charsets.ASCII);
-  
-  private static final int BUFFER_SIZE = (int) Settings.getLong("snapshot.buffer");
-  
+  @SuppressWarnings("unused")
   private static final Logger log = LoggerFactory.getLogger(SnapshotWriter.class);
-
+  
+  private static final byte[] HEADER = "HAVEN".getBytes(Charsets.ASCII);
+  
   private final File file;
   private final Accessor accessor;
   private final Expires expires = new Expires();
+  private final int bufferSize;
   
   private transient Revision revision;
   private transient ByteBuffer buffer;
+  private transient ByteBuffer uncompressedBuffer;
+  private transient byte[] compressedBuffer;
   private transient Token key;
   private transient long keysWritten = 0;
   private transient long bytesWritten = 0;
@@ -44,12 +46,14 @@ final class SnapshotWriter implements Callable<Integer> {
   private transient Long startingRevision;
   private transient long lastRevision;
   
-  public SnapshotWriter(File file) throws IOException {
-    this(file, null);
+  public SnapshotWriter(File file, int bufferSize) throws IOException {
+    this(file, null, bufferSize);
   }
   
-  public SnapshotWriter(File file, Accessor accessor) throws IOException {
+  public SnapshotWriter(File file, Accessor accessor, int bufferSize) throws IOException {
     this.file = file;
+    this.bufferSize = bufferSize;
+    
     if (accessor != null) {
       this.accessor = accessor;
     } 
@@ -85,32 +89,32 @@ final class SnapshotWriter implements Callable<Integer> {
     try {
       FileChannel channel = fout.getChannel();
       
-      buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+      uncompressedBuffer = ByteBuffer.allocate(bufferSize);
+      // TODO is it safe to assume compressed is always less?
+      compressedBuffer = new byte[bufferSize];
+      
+      buffer = ByteBuffer.allocateDirect(bufferSize + 5);
       buffer.put(HEADER);
-      buffer.putInt(1); // version
+      buffer.putInt(1); // the snapshot version
+      buffer.putInt(bufferSize); // minimum buffer size needed to read the snapshot
       
       try {
-        int n = 0;
-        while ((n = accessor.submit(this).get()) > 0) { 
-          buffer.flip();
-          while (channel.write(buffer) < n);
-          buffer.compact();
+        while (accessor.submit(this).get() > 0) {
+          writeUncompressedBuffer(channel);
         }
       } catch (InterruptedException e) {
-        log.error("Error taking snapshot, shutting down", e.getCause());
-        System.exit(1);
+        throw new IOException("Snapshot interrupted", e);
       } catch (ExecutionException e) {
-        log.error("Error taking snapshot, shutting down", e.getCause());
-        System.exit(1);
+        throw new IOException("Snapshot failed reading database", e.getCause());
       }
       
-      if (buffer.remaining() < 1) {
-        buffer.flip();
-        while (channel.write(buffer) < 1);
-        buffer.compact();
+      if (uncompressedBuffer.position() > 0) {
+        writeUncompressedBuffer(channel);
       }
       
-      buffer.put((byte)0xFF);
+      ensureRemainingCapacity(channel, 1);
+      buffer.put(ModelType.RESERVED_EOF.getId());
+      
       buffer.flip();
       while (buffer.hasRemaining()) {
         channel.write(buffer);
@@ -127,10 +131,35 @@ final class SnapshotWriter implements Callable<Integer> {
       buffer = null;
     }
   }
+  
+  private void writeUncompressedBuffer(FileChannel channel) throws IOException {
+    int compressedLength = Snappy.compress(
+        uncompressedBuffer.array(), 0, uncompressedBuffer.position(), 
+        compressedBuffer, 0);
+    
+    ensureRemainingCapacity(channel, compressedLength + 5);
+    buffer.put(ModelType.RESERVED_COMPRESSED_BLOCK.getId());
+    buffer.putInt(compressedLength);
+    buffer.put(compressedBuffer, 0, compressedLength);
+    //log.info("Writing {}b chunk", compressedLength);
+    
+    uncompressedBuffer.clear();
+  }
+  
+  private void ensureRemainingCapacity(FileChannel channel, int expected) throws IOException {
+    int remainingCapacity = buffer.remaining();
+    if (remainingCapacity < expected) {
+      int overflow = expected - remainingCapacity;
+      buffer.flip();
+      int written = 0;
+      while ((written += channel.write(buffer)) < overflow);
+      buffer.compact();
+    }
+  }
 
   @Override
   public Integer call() throws IOException {
-    final ByteBuffer buffer = this.buffer;
+    final ByteBuffer buffer = this.uncompressedBuffer;
     final Revision revision = this.revision;
     
     Token key = this.key;
@@ -173,7 +202,7 @@ final class SnapshotWriter implements Callable<Integer> {
       }
       
       if (model.getExpirationTime() != null) {
-        buffer.put(ModelType.EXPIRES.getId());
+        buffer.put(ModelType.RESERVED_EXPIRES.getId());
         expires.setExpires(model.getExpirationTime());
         expires.serialize(buffer);
       }

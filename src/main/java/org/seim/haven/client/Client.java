@@ -96,7 +96,6 @@ public class Client {
     } else if (response instanceof IntegerResponse) {
       return Charsets.toLong(((IntegerResponse)response).value());
     } else if (response instanceof ErrorResponse) {
-      System.out.println(response.toString());
       return "ERR";
     } else {
       return response.toString();

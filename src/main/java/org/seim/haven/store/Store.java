@@ -32,6 +32,7 @@ public final class Store {
   protected static final Path SNAPSHOT_DIR = Paths.get(Settings.getString("snapshot.dir"));
   protected static final Path SNAPSHOT_PATH = SNAPSHOT_DIR.resolve(Paths.get("snapshot.hdb"));
   protected static final Path SNAPSHOT_PATH_TEMP = SNAPSHOT_DIR.resolve(Paths.get("_snapshot.hdb"));
+  private static final int DEFAULT_BUFFER_SIZE = (int) Settings.getLong("snapshot.buffer");
   
   private final Object lock = new Object();
   
@@ -62,7 +63,7 @@ public final class Store {
     if (Files.exists(SNAPSHOT_PATH)) {
       Map<Token,Long> revisions = new HashMap<>(10000);
       state = new ReplayStateImpl(revisions);
-      SnapshotReader reader = new SnapshotReader(SNAPSHOT_PATH.toFile());
+      SnapshotReader reader = new SnapshotReader(SNAPSHOT_PATH.toFile(), DEFAULT_BUFFER_SIZE);
       try {
         snapshotRevision = reader.load(revisions);
       } finally {
@@ -153,7 +154,7 @@ public final class Store {
     long start = System.currentTimeMillis();
     
     File file = SNAPSHOT_PATH_TEMP.toFile();
-    SnapshotWriter writer = new SnapshotWriter(file, processor);
+    SnapshotWriter writer = new SnapshotWriter(file, processor, DEFAULT_BUFFER_SIZE);
     writer.write(Database.revision());
 
     // replace the last snapshot with the new one
