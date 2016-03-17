@@ -16,13 +16,13 @@ abstract class AbstractServerTest {
     server = new TestHavenServer();
     store = server.getStore();
     server.start();
-    client = new Client();
-    client.start();
+    client = new Client("localhost", 7073);
+    client.connect();
   }
   
   @AfterClass
   static void stopServer() {
-    client.shutdown();
+    client.close();
     client = null;
     server.shutdown();
     server = null;

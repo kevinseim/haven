@@ -2,6 +2,7 @@ package org.seim.haven.client;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -20,10 +21,10 @@ import org.seim.haven.util.Charsets;
 import org.seim.haven.util.IOUtils;
 
 /**
- * A simple Haven client.
+ * A very basic Haven client (used by the CLI and test cases).
  * @author Kevin Seim
  */
-public class Client {
+public class Client implements Closeable {
 
   private String host;
   private int port;
@@ -37,7 +38,15 @@ public class Client {
    * Creates a new client for connecting to localhost:8080.
    */
   public Client() {
-    this("localhost", 8080);
+    this("localhost", 7072);
+  }
+  
+  public String getHost() {
+    return host;
+  }
+  
+  public int getPort() {
+    return port;
   }
   
   public Client(String host, int port) {
@@ -45,20 +54,17 @@ public class Client {
     this.port = port;
   }
   
-  public void start() throws IOException {
-    connect();
-  }
-  
-  public void shutdown() throws IOException {
-    disconnect();
-  }
-  
-  private void connect() throws IOException {
+  public void connect() throws IOException {
     socket = new Socket(host, port);
     socket.setKeepAlive(true);
     socket.setSoTimeout(30000);
     in = new BufferedInputStream(socket.getInputStream());
     out = new PrintWriter(socket.getOutputStream(), false);
+  }
+ 
+  @Override
+  public void close() {
+    disconnect();
   }
   
   private void disconnect() {

@@ -24,7 +24,7 @@ class ServerTest {
       Thread.sleep(5000);
       
       Client client = new Client();
-      client.start();
+      client.connect();
       
       println client.send('set key val1');
       println client.send('set key val2');
@@ -42,7 +42,7 @@ class ServerTest {
       
       Thread.sleep(30000);
       
-      client.shutdown();
+      client.close();
     } 
     catch (Exception e) {
       e.printStackTrace();

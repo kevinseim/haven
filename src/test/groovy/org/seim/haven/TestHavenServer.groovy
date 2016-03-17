@@ -12,7 +12,7 @@ public class TestHavenServer {
 
   private static final Logger log = LoggerFactory.getLogger(TestHavenServer.class);
   
-  private final Transport transport = new Transport(8080);
+  private final Transport transport = new Transport(7073);
   private final Processor processor = new Processor();
   private final TestStore store;
   private Thread server;

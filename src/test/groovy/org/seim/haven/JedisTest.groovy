@@ -8,7 +8,7 @@ class JedisTest extends AbstractServerTest {
 
   @Test
   void testClose() {
-    Jedis jedis = new Jedis("localhost", 8080);
+    Jedis jedis = new Jedis("localhost", 7073);
     try {
       assert jedis.incr("c") == 1
       assert jedis.incr("c") == 2
