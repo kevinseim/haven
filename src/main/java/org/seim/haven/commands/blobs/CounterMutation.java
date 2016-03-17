@@ -1,7 +1,7 @@
 package org.seim.haven.commands.blobs;
 
-import org.seim.haven.commands.BasicCommand;
 import org.seim.haven.commands.InvalidRequestException;
+import org.seim.haven.commands.impl.BasicCommand;
 import org.seim.haven.models.Blob;
 import org.seim.haven.models.Counter;
 import org.seim.haven.models.Model;

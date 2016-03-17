@@ -1,5 +1,8 @@
-package org.seim.haven.commands;
+package org.seim.haven.commands.impl;
 
+import org.seim.haven.commands.Command;
+import org.seim.haven.commands.InvalidRequestException;
+import org.seim.haven.commands.Request;
 import org.seim.haven.models.Token;
 import org.seim.haven.response.ErrorResponse;
 import org.seim.haven.response.Response;

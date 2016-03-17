@@ -40,4 +40,18 @@ class BlobsTest extends AbstractServerTest {
     assert client.test("set key1 value1") == "OK"
     assert client.test("type key1") == "string"
   }
+  
+  @Test
+  void testRestore() {
+    assert client.test("set key value") == "OK"
+    
+    // test replay from commit log
+    store.reload();
+    assert client.test("get key") == "value"
+    
+    // test load from snapshot
+    store.snapshot();
+    store.clearLogAndReload();
+    assert client.test("get key") == "value"
+  }
 }

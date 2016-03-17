@@ -1,6 +1,6 @@
 package org.seim.haven.commands.keys;
 
-import org.seim.haven.commands.BasicCommand;
+import org.seim.haven.commands.impl.BasicCommand;
 import org.seim.haven.models.Token;
 import org.seim.haven.response.ErrorResponse;
 import org.seim.haven.response.Response;

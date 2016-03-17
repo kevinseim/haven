@@ -1,4 +1,4 @@
-package org.seim.haven.commands;
+package org.seim.haven.commands.impl;
 
 import org.seim.haven.models.Token;
 import org.seim.haven.response.Response;
