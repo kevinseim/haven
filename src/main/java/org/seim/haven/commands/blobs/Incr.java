@@ -1,6 +1,6 @@
 package org.seim.haven.commands.blobs;
 
-import org.seim.haven.models.Token;
+import org.seim.haven.commands.impl.FlexRequest;
 
 /**
  * Increments a Counter model by one.
@@ -12,11 +12,11 @@ import org.seim.haven.models.Token;
 public final class Incr extends CounterMutation {
 
   public Incr() {
-    setArgumentsLength(2, 2);
+    setArguments(keyArg);
   }
 
   @Override
-  protected long getAmount(Token[] tokens) {
+  protected long getAmount(FlexRequest request) {
     return 1;
   }
 }

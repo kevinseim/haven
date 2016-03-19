@@ -29,8 +29,8 @@ class FlexCommandTest {
     ]
     for (String line : lines) {
       req = cmd.parse(line)
-      assert req.getValue(key) as String == "key1"
-      assert req.getValue(value) as String == "value1"
+      assert req.getToken(key) as String == "key1"
+      assert req.getToken(value) as String == "value1"
     }
   }
   
@@ -97,6 +97,8 @@ class FlexCommandTest {
     cmd.setOptions([nx, ex] as Option[])
     cmd.setArguments([term, keys] as Argument[])
     
+    List expected = ["key1", "key2"]
+    
     lines = [
       "run term1 key1 key2",
       "run -nx term1 key1 key2",
@@ -104,15 +106,20 @@ class FlexCommandTest {
     ]
     for (String line : lines) {
       req = cmd.parse(line)
-      assert req.getValue(term) as String == "term1"
+      assert req.getToken(term) as String == "term1"
       List vals = req.getValues(keys) as List
       assert vals.size() == 2
       assert vals[0].toString() == "key1"
       assert vals[1].toString() == "key2"
+      
+      int i = 0, index = 0;
+      while ((index = req.indexOf(keys, index)) != -1) {
+        req.getToken(index++) == expected[i++]
+      }
     }
     
     req = cmd.parse("run term1 key1")
-    assert req.getValue(keys) as String == "key1"
+    assert req.getToken(keys) as String == "key1"
     List vals = req.getValues(keys) as List
     assert vals.size() == 1
     assert vals[0].toString() == "key1"
@@ -141,8 +148,8 @@ class FlexCommandTest {
     List lines
     Option nx = new Option("nx")
     Option ex = new Option("ex")
-    Option top = new Option("top", true)
-    Option m = new Option("m", true, true)
+    Option top = new Option("top", Option.Type.STRING)
+    Option m = new Option("m", Option.Type.STRING, true)
     
     TestFlexCommand cmd = new TestFlexCommand()
     cmd.setOptions([nx, ex, top, m] as Option[])
@@ -167,7 +174,7 @@ class FlexCommandTest {
       req = cmd.parse(line)
       assert req.has(nx);
       assert req.has(top);
-      assert req.getValue(top) as String == "key1"
+      assert req.getToken(top) as String == "key1"
     }
     
     lines = [
@@ -195,8 +202,16 @@ class FlexCommandTest {
   }
   
   @Test(expected=InvalidRequestException.class)
+  void testInvalidNumberOption() {
+    Option nx = new Option("xm", Option.Type.NUMBER)
+    TestFlexCommand cmd = new TestFlexCommand()
+    cmd.setOptions([nx] as Option[])
+    cmd.parse("run -xm 100a")
+  }
+  
+  @Test(expected=InvalidRequestException.class)
   void testInvalidRepeatingOption() {
-    Option nx = new Option("a", true)
+    Option nx = new Option("a", Option.Type.STRING)
     TestFlexCommand cmd = new TestFlexCommand()
     cmd.setOptions([nx] as Option[])
     cmd.parse("run -a one -a two")

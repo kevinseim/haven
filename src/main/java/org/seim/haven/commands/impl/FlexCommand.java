@@ -84,9 +84,13 @@ public abstract class FlexCommand implements Command {
             }
           }
           
-          // increment 'i' to skip the option value
+          // increment 'index' to skip the option value
           if (++index >= args.length) {
             throw new InvalidRequestException("Expected parameter for option '-" + matchedOption.getName() + "'");
+          }
+          
+          if (matchedOption.getType() == Option.Type.NUMBER) {
+            args[index].validateLong(matchedOption.getName());
           }
         }
       }
@@ -145,7 +149,7 @@ public abstract class FlexCommand implements Command {
       for (int i=0; i<arguments.length; i++) {
         if (i > 0) {
           Argument prev = arguments[i - 1];
-          if (prev.getMaxOccurs() == null || prev.getMinOccurs() != prev.getMaxOccurs().intValue()) {
+          if (prev.getMinOccurs() != prev.getMaxOccurs()) {
             throw new IllegalArgumentException("Invalid occurrences for argument '" + prev.getName() + "'");
           }
           minArgumentLength += prev.getMinOccurs();

@@ -3,6 +3,7 @@ package org.seim.haven.models;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.seim.haven.commands.InvalidRequestException;
 import org.seim.haven.store.Storable;
 import org.seim.haven.util.Charsets;
 
@@ -128,6 +129,14 @@ public final class Token implements Storable {
       return false;
     }
     return Arrays.equals(this.value, ((Token)o).value);
+  }
+  
+  public void validateLong(String name) {
+    try {
+      toLong();
+    } catch (NumberFormatException e) {
+      throw new InvalidRequestException("Invalid integer parameter '" + name + "'");
+    }
   }
   
   public long toLong() throws NumberFormatException {

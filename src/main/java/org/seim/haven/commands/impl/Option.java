@@ -12,24 +12,24 @@ public final class Option {
 
   private final String name;
   private final Token token;
-  private final boolean hasParameter;
+  private final Type type;
   private final boolean repeating;
   
   public Option(String name) {
-    this(name, false, false);
+    this(name, null, false);
   }
   
-  public Option(String name, boolean hasParam) {
-    this(name, hasParam, false);
+  public Option(String name, Type type) {
+    this(name, type, false);
   }
   
-  public Option(String name, boolean hasParam, boolean repeats) {
+  public Option(String name, Type type, boolean repeats) {
     if (name == null || name.startsWith("-")) {
       throw new IllegalArgumentException("name");
     }
     this.name = name;
     this.token = new Token("-" + name);
-    this.hasParameter = hasParam;
+    this.type = type;
     this.repeating = repeats;
   }
   
@@ -41,8 +41,12 @@ public final class Option {
     return token;
   }
   
+  public Type getType() {
+    return type;
+  }
+  
   public boolean hasParameter() {
-    return hasParameter;
+    return type != null;
   }
   
   public boolean isRepeating() {
@@ -82,5 +86,10 @@ public final class Option {
       }
     }
     return -1;
+  }
+  
+  public enum Type {
+    NUMBER,
+    STRING;
   }
 }

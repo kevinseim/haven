@@ -1,8 +1,9 @@
 package org.seim.haven.commands.blobs;
 
-import org.seim.haven.commands.InvalidRequestException;
-import org.seim.haven.commands.Request;
-import org.seim.haven.commands.impl.BasicCommand;
+import org.seim.haven.commands.impl.Argument;
+import org.seim.haven.commands.impl.FlexCommand;
+import org.seim.haven.commands.impl.FlexRequest;
+import org.seim.haven.commands.impl.Option;
 import org.seim.haven.models.Blob;
 import org.seim.haven.models.Token;
 import org.seim.haven.response.Response;
@@ -12,33 +13,43 @@ import org.seim.haven.store.ReplayState;
 /**
  * @author Kevin Seim
  */
-public class Set extends BasicCommand {
+public class Set extends FlexCommand {
   
-  public Set() { 
-    setArgumentsLength(3, 3);
+  private final Option xOpt = new Option("x", Option.Type.NUMBER);
+  private final Option xnxOpt = new Option("xn");
+
+  private final Argument keyArg = new Argument("key", 0);
+  private final Argument valueArg = new Argument("value", 1);
+  
+  public Set() {
+    setOptions(xOpt, xnxOpt);
+    setArguments(keyArg, valueArg);
   }
   
   @Override
-  public Request parse(Token... tokens) {
-    if (tokens.length != 3) {
-      throw new InvalidRequestException("Wrong number of arguments");
-    }
-    return super.parse(tokens);
+  protected Response process(FlexRequest request) {
+    replay(ReplayState.LIVE, request);
+    return Response.OK;
   }
 
   @Override
-  protected Response process(Token[] tokens) {
-    replay(ReplayState.LIVE, tokens);
-    return Response.OK;
-  }
-  
-  @Override
-  public boolean replay(ReplayState state, Token[] tokens) {
-    Token key = tokens[1];
+  protected boolean replay(ReplayState state, FlexRequest request) {
+    Token key = request.getToken(keyArg);
     if (state.shouldReplay(key)) {
-      Token value = tokens[2];
-      Database.put(key, new Blob(value));
-      Database.log(tokens);
+      // create a new Blob model
+      Blob blob = new Blob(request.getToken(valueArg));
+      
+      // set the expiration time if specified
+      Token expires = request.getToken(xOpt);
+      if (expires != null) {
+        long at = expires.toLong() + System.currentTimeMillis(); 
+        if (!request.has(xnxOpt) || !Database.contains(key)) {
+          blob.setExpirationTime(at);
+        }
+      }
+      
+      Database.put(key, blob);
+      Database.log(request.getTokens());
       return true;
     }
     return false;

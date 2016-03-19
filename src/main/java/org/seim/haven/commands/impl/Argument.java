@@ -40,7 +40,7 @@ public final class Argument implements Comparable<Argument> {
     return minOccurs;
   }
 
-  public Integer getMaxOccurs() {
+  public int getMaxOccurs() {
     return maxOccurs;
   }
   

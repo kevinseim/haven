@@ -19,14 +19,6 @@ public class Counter extends AbstractModel {
     return value;
   }
   
-  public void increment() {
-    ++value;
-  }
-  
-  public void decrement() {
-    --value;
-  }
-  
   public void add(long delta) {
     value += delta;
   }
